@@ -94,25 +94,24 @@ const idb = {
      * @returns {Promise<Array>} - A promise that resolves to an array of calorie entries
      */
     getCaloriesByMonth: async (db, year, month) => {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction(["calories"], "readonly");
-            const objectStore = transaction.objectStore("calories");
-            const index = objectStore.index("date");
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(["calories"], "readonly");
+        const objectStore = transaction.objectStore("calories");
+        const index = objectStore.index("date");
 
-            // Define the date range for the query
-            const startDate = new Date(year, month, 1).toISOString().split('T')[0];
-            const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
-            
-            // Create a key range to query entries within the specified date range
-            const range = IDBKeyRange.bound(startDate, endDate);
-            const request = index.getAll(range);
-            
-            // Handle errors in retrieving entries
-            request.onerror = (event) => reject(new Error("Error getting calorie entries"));
-            // Resolve with the array of entries upon success
-            request.onsuccess = (event) => resolve(event.target.result);
-        });
-    }
+        // Define the date range for the query without using Date objects
+        const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+        const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`;
+
+        const range = IDBKeyRange.bound(startDate, endDate);
+
+        const request = index.getAll(range);
+
+        request.onerror = (event) => reject(new Error("Error getting calorie entries"));
+        request.onsuccess = (event) => resolve(event.target.result);
+    });
+},
+
 };
 
 export default idb;
