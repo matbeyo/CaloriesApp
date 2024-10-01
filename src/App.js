@@ -1,8 +1,10 @@
+// App.js
+
 // Ido Dohan 207933128
 // Mattan Ben Yosef 318360351
 
 import React, { useState, useEffect } from 'react';
-import idb from './idb';
+import idb from './idb.js'; 
 import CalorieForm from './CalorieForm';
 import CalorieList from './CalorieList';
 import CalorieChart from './CalorieChart';
@@ -24,6 +26,7 @@ const App = () => {
                 const database = await idb.openCaloriesDB("caloriesdb", 1);
                 setDb(database);
             } catch (err) {
+                console.error(err);
                 setError("Failed to initialize database. Please refresh the page.");
             }
         };
@@ -43,6 +46,7 @@ const App = () => {
             const fetchedCalories = await db.getCaloriesByMonth(selectedYear, selectedMonth);
             setCalories(fetchedCalories);
         } catch (err) {
+            console.error(err);
             setError("Failed to fetch calorie entries. Please try again.");
         }
     };
