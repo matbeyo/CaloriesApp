@@ -1,5 +1,4 @@
-// Ido Dohan 207933128
-// Mattan Ben Yosef 318360351
+// idb.js
 
 const idb = {
     /**
@@ -10,7 +9,7 @@ const idb = {
      */
     openCaloriesDB: function(dbName, version) {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(dbName, version);
+            const request = window.indexedDB.open(dbName, version);
 
             request.onerror = function(event) {
                 reject(new Error("Error opening database"));
@@ -39,6 +38,13 @@ const idb = {
                             if (!calorieData.date) {
                                 calorieData.date = new Date().toISOString();
                             }
+
+                            // Ensure the calorie property is named 'calories'
+                            if (calorieData.calorie && !calorieData.calories) {
+                                calorieData.calories = calorieData.calorie;
+                                delete calorieData.calorie;
+                            }
+
                             const transaction = db.transaction(["calories"], "readwrite");
                             const objectStore = transaction.objectStore("calories");
                             const request = objectStore.add(calorieData);
@@ -114,7 +120,9 @@ const idb = {
                             const range = IDBKeyRange.bound(startDate, endDate);
 
                             const results = [];
-                            index.openCursor(range).onsuccess = function(event) {
+                            const request = index.openCursor(range);
+
+                            request.onsuccess = function(event) {
                                 const cursor = event.target.result;
                                 if (cursor) {
                                     results.push(cursor.value);
@@ -124,7 +132,7 @@ const idb = {
                                 }
                             };
 
-                            index.openCursor(range).onerror = function(event) {
+                            request.onerror = function(event) {
                                 reject(new Error("Error retrieving calorie entries"));
                             };
                         });
@@ -137,5 +145,5 @@ const idb = {
     },
 };
 
-// Make 'idb' globally accessible
+// Make 'idb' available globally
 window.idb = idb;
