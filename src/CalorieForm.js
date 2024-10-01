@@ -1,15 +1,25 @@
+// CalorieForm.js
+
 // Ido Dohan 207933128
 // Mattan Ben Yosef 318360351
 
 import React, { useState, useEffect } from 'react';
 
 const CalorieForm = ({ db, fetchCalories, setError, entryToEdit, setEntryToEdit }) => {
+    // Helper function to format dates in 'YYYY-MM-DD' format in local time
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() +1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2,'0');
+        return `${year}-${month}-${day}`;
+    }
+
     // State for the calorie entry form
     const [newCalorie, setNewCalorie] = useState({
         calories: '',
         category: 'BREAKFAST',
         description: '',
-        date: new Date().toISOString().split('T')[0], // Default to today's date
+        date: formatDate(new Date()), // Default to today's date
     });
     const [editingId, setEditingId] = useState(null);
 
@@ -30,7 +40,7 @@ const CalorieForm = ({ db, fetchCalories, setError, entryToEdit, setEntryToEdit 
                 calories: '',
                 category: 'BREAKFAST',
                 description: '',
-                date: new Date().toISOString().split('T')[0],
+                date: formatDate(new Date()),
             });
             setEditingId(null);
         }
@@ -64,7 +74,7 @@ const CalorieForm = ({ db, fetchCalories, setError, entryToEdit, setEntryToEdit 
                 calories: '',
                 category: 'BREAKFAST',
                 description: '',
-                date: new Date().toISOString().split('T')[0],
+                date: formatDate(new Date()),
             });
             setEditingId(null);
             fetchCalories();
