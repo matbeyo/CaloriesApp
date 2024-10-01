@@ -1,7 +1,6 @@
 // Ido Dohan 207933128
 // Mattan Ben Yosef 318360351
 
-
 import React, { useState, useEffect } from 'react';
 import idb from './idb';
 import CalorieForm from './CalorieForm';
@@ -16,8 +15,9 @@ const App = () => {
     const [error, setError] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    
-  // Initialize the IndexedDB database when the component mounts
+    const [entryToEdit, setEntryToEdit] = useState(null); // New state for the entry being edited
+
+    // Initialize the IndexedDB database when the component mounts
     useEffect(() => {
         const initDb = async () => {
             try {
@@ -29,17 +29,18 @@ const App = () => {
         };
         initDb();
     }, []);
+
     // Fetch calorie entries whenever the database, selected month, or selected year changes
     useEffect(() => {
         if (db) {
             fetchCalories();
         }
     }, [db, selectedMonth, selectedYear]);
-    
+
     // Function to fetch calorie entries from the database
     const fetchCalories = async () => {
         try {
-            const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
+            const fetchedCalories = await db.getCaloriesByMonth(selectedYear, selectedMonth);
             setCalories(fetchedCalories);
         } catch (err) {
             setError("Failed to fetch calorie entries. Please try again.");
@@ -58,15 +59,29 @@ const App = () => {
             <h1 className="text-center mb-4">Calorie Management App</h1>
 
             {error && (
-                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                <div
+                    className="alert alert-danger d-flex align-items-center justify-content-between"
+                    role="alert"
+                >
                     {error}
-                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button
+                        type="button"
+                        className="btn-close"
+                        aria-label="Close"
+                        onClick={() => setError(null)}
+                    ></button>
                 </div>
             )}
 
             <div className="row">
                 <div className="col-lg-6 mb-4">
-                    <CalorieForm db={db} fetchCalories={fetchCalories} setError={setError} />
+                    <CalorieForm
+                        db={db}
+                        fetchCalories={fetchCalories}
+                        setError={setError}
+                        entryToEdit={entryToEdit}        // Pass entryToEdit to CalorieForm
+                        setEntryToEdit={setEntryToEdit}  // Pass setEntryToEdit to CalorieForm
+                    />
                 </div>
                 <div className="col-lg-6 mb-4">
                     <div className="card shadow-sm">
@@ -80,7 +95,13 @@ const App = () => {
                                 onChange={handleMonthChange}
                                 className="form-control mb-3"
                             />
-                            <CalorieList calories={calories} db={db} fetchCalories={fetchCalories} setError={setError} />
+                            <CalorieList
+                                calories={calories}
+                                db={db}
+                                fetchCalories={fetchCalories}
+                                setError={setError}
+                                setEntryToEdit={setEntryToEdit}  // Pass setEntryToEdit to CalorieList
+                            />
                         </div>
                     </div>
                 </div>
