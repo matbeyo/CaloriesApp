@@ -1,8 +1,17 @@
+// idb.js
+
 // Ido Dohan 207933128
 // Mattan Ben Yosef 318360351
 
 (function () {
-    //  idb library code
+    // Helper function to format dates in 'YYYY-MM-DD' format in local time
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() +1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2,'0');
+        return `${year}-${month}-${day}`;
+    }
+
     const idb = {
         /**
          * Opens or creates a database for calorie management and returns an object with methods to interact with it
@@ -42,7 +51,7 @@
                             return new Promise((resolve, reject) => {
                                 // Add current date if not provided, in 'YYYY-MM-DD' format
                                 if (!calorieData.date) {
-                                    calorieData.date = new Date().toISOString().split("T")[0];
+                                    calorieData.date = formatDate(new Date());
                                 }
 
                                 // Ensure the calorie property is named 'calories'
@@ -120,10 +129,10 @@
                                 const index = objectStore.index("date");
 
                                 // Define the date range for the query in 'YYYY-MM-DD' format
-                                const startDate = new Date(year, month, 1).toISOString().split("T")[0];
-                                const endDate = new Date(year, month + 1, 0).toISOString().split("T")[0];
+                                const startDate = formatDate(new Date(year, month, 1));
+                                const endDate = formatDate(new Date(year, month + 1, 1));
 
-                                const range = IDBKeyRange.bound(startDate, endDate);
+                                const range = IDBKeyRange.bound(startDate, endDate, false, true);
 
                                 const results = [];
                                 const request = index.openCursor(range);
