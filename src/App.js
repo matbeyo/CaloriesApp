@@ -13,8 +13,8 @@ const App = () => {
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [isLoading, setIsLoading] = useState(true);
+    const [editingEntry, setEditingEntry] = useState(null);
     
-    // Initialize the IndexedDB database when the component mounts
     useEffect(() => {
         const initDb = async () => {
             try {
@@ -31,13 +31,11 @@ const App = () => {
         initDb();
     }, []);
 
-    // Fetch calorie entries whenever the database, selected month, or selected year changes
     useEffect(() => {
         const fetchCalories = async () => {
             if (!db) return;
             
             try {
-                // Call getCaloriesByMonth through the idb object, not directly on db
                 const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
                 setCalories(fetchedCalories);
                 setError(null);
@@ -56,7 +54,6 @@ const App = () => {
         setSelectedMonth(parseInt(month) - 1);
     };
 
-    // Function to refresh calories data
     const refreshCalories = async () => {
         if (!db) return;
         try {
@@ -88,7 +85,9 @@ const App = () => {
                     <CalorieForm 
                         db={db} 
                         fetchCalories={refreshCalories}
-                        setError={setError} 
+                        setError={setError}
+                        editingEntry={editingEntry}
+                        setEditingEntry={setEditingEntry}
                     />
                 </div>
                 <div className="col-lg-6 mb-4">
@@ -107,7 +106,8 @@ const App = () => {
                                 calories={calories} 
                                 db={db} 
                                 fetchCalories={refreshCalories}
-                                setError={setError} 
+                                setError={setError}
+                                setEditingEntry={setEditingEntry}
                             />
                         </div>
                     </div>
