@@ -1,106 +1,90 @@
-// CalorieForm.js
-
-// Ido Dohan 207933128
-// Mattan Ben Yosef 318360351
-
 import React, { useState, useEffect } from 'react';
+import idb from './idb';
 
-const CalorieForm = ({ db, fetchCalories, setError, entryToEdit, setEntryToEdit }) => {
-    // Helper function to format dates in 'YYYY-MM-DD' format in local time
-    function formatDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() +1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2,'0');
-        return `${year}-${month}-${day}`;
-    }
-
-    // State for the calorie entry form
-    const [newCalorie, setNewCalorie] = useState({
+const CalorieForm = ({ db, fetchCalories, setError, editingEntry, setEditingEntry }) => {
+    const [formData, setFormData] = useState({
         calories: '',
         category: 'BREAKFAST',
         description: '',
-        date: formatDate(new Date()), // Default to today's date
+        date: new Date().toISOString().split('T')[0],
     });
-    const [editingId, setEditingId] = useState(null);
 
-    // Update form fields when entryToEdit changes
+    // Update form when editingEntry changes
     useEffect(() => {
-        if (entryToEdit) {
-            // Populate form with the entry to edit
-            setNewCalorie({
-                calories: entryToEdit.calories,
-                category: entryToEdit.category,
-                description: entryToEdit.description,
-                date: entryToEdit.date,
+        if (editingEntry) {
+            setFormData({
+                calories: editingEntry.calories,
+                category: editingEntry.category,
+                description: editingEntry.description,
+                date: editingEntry.date,
             });
-            setEditingId(entryToEdit.id);
-        } else {
-            // Reset form when not editing
-            setNewCalorie({
-                calories: '',
-                category: 'BREAKFAST',
-                description: '',
-                date: formatDate(new Date()),
-            });
-            setEditingId(null);
         }
-    }, [entryToEdit]);
+    }, [editingEntry]);
 
-    // Handler for input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setNewCalorie((prev) => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handler for adding or updating a calorie entry
-    const handleAddCalorie = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (newCalorie.calories <= 0) {
+        if (formData.calories <= 0) {
             setError("Calories must be greater than zero.");
             return;
         }
 
         try {
-            if (editingId) {
-                // Update existing calorie entry
-                await db.updateCalories({ ...newCalorie, id: editingId });
-                setEntryToEdit(null); // Reset editing state
+            if (editingEntry) {
+                // Update existing entry
+                await idb.updateCalories(db, {
+                    ...formData,
+                    id: editingEntry.id
+                });
+                setEditingEntry(null); // Clear editing state
             } else {
-                // Add new calorie entry
-                await db.addCalories(newCalorie);
+                // Add new entry
+                await idb.addCalories(db, formData);
             }
-            // Reset the form fields
-            setNewCalorie({
+
+            // Reset form
+            setFormData({
                 calories: '',
                 category: 'BREAKFAST',
                 description: '',
-                date: formatDate(new Date()),
+                date: new Date().toISOString().split('T')[0],
             });
-            setEditingId(null);
+            
             fetchCalories();
         } catch (err) {
-            setError(`Failed to ${editingId ? 'update' : 'add'} calorie entry. Please try again.`);
+            setError(`Failed to ${editingEntry ? 'update' : 'add'} calorie entry. Please try again.`);
         }
     };
 
-    // Handler to cancel editing
-    const handleCancelEdit = () => {
-        setEntryToEdit(null);
+    const handleCancel = () => {
+        setEditingEntry(null);
+        setFormData({
+            calories: '',
+            category: 'BREAKFAST',
+            description: '',
+            date: new Date().toISOString().split('T')[0],
+        });
     };
 
     return (
         <div className="card shadow-sm">
             <div className="card-header text-white bg-secondary">
-                <h5 className="card-title mb-0">{editingId ? 'Edit Entry' : 'Add New Entry'}</h5>
+                <h5 className="card-title mb-0">
+                    {editingEntry ? 'Edit Entry' : 'Add New Entry'}
+                </h5>
             </div>
             <div className="card-body">
-                <form onSubmit={handleAddCalorie}>
+                <form onSubmit={handleSubmit}>
                     <div className="form-floating mb-3">
                         <input
                             type="number"
                             id="calories"
                             name="calories"
-                            value={newCalorie.calories}
+                            value={formData.calories}
                             onChange={handleInputChange}
                             className="form-control"
                             placeholder="Calories"
@@ -112,7 +96,7 @@ const CalorieForm = ({ db, fetchCalories, setError, entryToEdit, setEntryToEdit 
                         <select
                             id="category"
                             name="category"
-                            value={newCalorie.category}
+                            value={formData.category}
                             onChange={handleInputChange}
                             className="form-control"
                         >
@@ -128,7 +112,7 @@ const CalorieForm = ({ db, fetchCalories, setError, entryToEdit, setEntryToEdit 
                             type="text"
                             id="description"
                             name="description"
-                            value={newCalorie.description}
+                            value={formData.description}
                             onChange={handleInputChange}
                             className="form-control"
                             placeholder="Description"
@@ -141,22 +125,24 @@ const CalorieForm = ({ db, fetchCalories, setError, entryToEdit, setEntryToEdit 
                             type="date"
                             id="date"
                             name="date"
-                            value={newCalorie.date}
+                            value={formData.date}
                             onChange={handleInputChange}
                             className="form-control"
                             required
                         />
                         <label htmlFor="date">Date</label>
                     </div>
-                    <button type="submit" className="btn btn-primary me-2">
-                        <i className={`bi ${editingId ? 'bi-pencil' : 'bi-plus-circle'}`}></i>{' '}
-                        {editingId ? 'Update' : 'Add'} Calorie Entry
-                    </button>
-                    {editingId && (
-                        <button type="button" className="btn btn-secondary" onClick={handleCancelEdit}>
-                            Cancel
+                    <div className="d-flex gap-2">
+                        <button type="submit" className="btn btn-primary">
+                            <i className={`bi ${editingEntry ? 'bi-check-circle' : 'bi-plus-circle'}`}></i>
+                            {editingEntry ? ' Save Changes' : ' Add Entry'}
                         </button>
-                    )}
+                        {editingEntry && (
+                            <button type="button" onClick={handleCancel} className="btn btn-secondary">
+                                <i className="bi bi-x-circle"></i> Cancel
+                            </button>
+                        )}
+                    </div>
                 </form>
             </div>
         </div>
