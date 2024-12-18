@@ -1,15 +1,10 @@
-// App.js
-
-// Ido Dohan 207933128
-// Mattan Ben Yosef 318360351
-
 import React, { useState, useEffect } from 'react';
-import idb from './idb.js'; 
+import idb from './idb';
 import CalorieForm from './CalorieForm';
 import CalorieList from './CalorieList';
 import CalorieChart from './CalorieChart';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css'; // For icons
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const App = () => {
     const [db, setDb] = useState(null);
@@ -17,17 +12,20 @@ const App = () => {
     const [error, setError] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    const [entryToEdit, setEntryToEdit] = useState(null); // New state for the entry being edited
-
+    const [isLoading, setIsLoading] = useState(true);
+    
     // Initialize the IndexedDB database when the component mounts
     useEffect(() => {
         const initDb = async () => {
             try {
-                const database = await idb.openCaloriesDB("caloriesdb", 1);
+                setIsLoading(true);
+                const database = await idb.openCaloriesDB();
                 setDb(database);
             } catch (err) {
-                console.error(err);
+                console.error('Database initialization error:', err);
                 setError("Failed to initialize database. Please refresh the page.");
+            } finally {
+                setIsLoading(false);
             }
         };
         initDb();
@@ -35,56 +33,62 @@ const App = () => {
 
     // Fetch calorie entries whenever the database, selected month, or selected year changes
     useEffect(() => {
-        if (db) {
-            fetchCalories();
-        }
+        const fetchCalories = async () => {
+            if (!db) return;
+            
+            try {
+                const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
+                setCalories(fetchedCalories);
+                setError(null);
+            } catch (err) {
+                console.error('Fetch error:', err);
+                setError("Failed to fetch calorie entries. Please try again.");
+            }
+        };
+
+        fetchCalories();
     }, [db, selectedMonth, selectedYear]);
 
-    // Function to fetch calorie entries from the database
-    const fetchCalories = async () => {
-        try {
-            const fetchedCalories = await db.getCaloriesByMonth(selectedYear, selectedMonth);
-            setCalories(fetchedCalories);
-        } catch (err) {
-            console.error(err);
-            setError("Failed to fetch calorie entries. Please try again.");
-        }
-    };
-
-    // Handler for changing the selected month and year
     const handleMonthChange = (e) => {
         const [year, month] = e.target.value.split('-');
         setSelectedYear(parseInt(year));
         setSelectedMonth(parseInt(month) - 1);
     };
 
+    if (isLoading) {
+        return <div className="container mt-5 text-center">Loading...</div>;
+    }
+
     return (
         <div className="container mt-5">
             <h1 className="text-center mb-4">Calorie Management App</h1>
 
             {error && (
-                <div
-                    className="alert alert-danger d-flex align-items-center justify-content-between"
-                    role="alert"
-                >
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
                     {error}
-                    <button
-                        type="button"
-                        className="btn-close"
-                        aria-label="Close"
-                        onClick={() => setError(null)}
-                    ></button>
+                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             )}
 
             <div className="row">
                 <div className="col-lg-6 mb-4">
-                    <CalorieForm
-                        db={db}
-                        fetchCalories={fetchCalories}
-                        setError={setError}
-                        entryToEdit={entryToEdit}        // Pass entryToEdit to CalorieForm
-                        setEntryToEdit={setEntryToEdit}  // Pass setEntryToEdit to CalorieForm
+                    <CalorieForm 
+                        db={db} 
+                        fetchCalories={() => {
+                            // Trigger a re-fetch by forcing the useEffect to run
+                            const fetchCalories = async () => {
+                                if (!db) return;
+                                try {
+                                    const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
+                                    setCalories(fetchedCalories);
+                                    setError(null);
+                                } catch (err) {
+                                    setError("Failed to fetch calorie entries. Please try again.");
+                                }
+                            };
+                            fetchCalories();
+                        }} 
+                        setError={setError} 
                     />
                 </div>
                 <div className="col-lg-6 mb-4">
@@ -99,12 +103,24 @@ const App = () => {
                                 onChange={handleMonthChange}
                                 className="form-control mb-3"
                             />
-                            <CalorieList
-                                calories={calories}
-                                db={db}
-                                fetchCalories={fetchCalories}
-                                setError={setError}
-                                setEntryToEdit={setEntryToEdit}  // Pass setEntryToEdit to CalorieList
+                            <CalorieList 
+                                calories={calories} 
+                                db={db} 
+                                fetchCalories={() => {
+                                    // Trigger a re-fetch by forcing the useEffect to run
+                                    const fetchCalories = async () => {
+                                        if (!db) return;
+                                        try {
+                                            const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
+                                            setCalories(fetchedCalories);
+                                            setError(null);
+                                        } catch (err) {
+                                            setError("Failed to fetch calorie entries. Please try again.");
+                                        }
+                                    };
+                                    fetchCalories();
+                                }} 
+                                setError={setError} 
                             />
                         </div>
                     </div>
