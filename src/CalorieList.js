@@ -1,18 +1,18 @@
 import React from 'react';
 import idb from './idb';
 
-const CalorieList = ({ calories, db, fetchCalories, setError }) => {
-    // Handler to delete a calorie entry
+const CalorieList = ({ calories, db, fetchCalories, setError, setEditingEntry }) => {
     const handleDelete = async (id) => {
         try {
             await idb.deleteCalories(db, id);
-            fetchCalories(); // Refresh the list after deletion
+            fetchCalories();
         } catch (err) {
             setError("Failed to delete calorie entry. Please try again.");
         }
     };
 
     const handleEdit = (entry) => {
+        setEditingEntry(entry);
     };
 
     return (
@@ -23,18 +23,12 @@ const CalorieList = ({ calories, db, fetchCalories, setError }) => {
                         <span className="badge bg-primary me-2">{entry.category}</span>
                         <strong>{entry.calories} calories</strong> - {entry.description} ({entry.date})
                     </div>
-                    <div className="d-flex gap-2">
-                        <button 
-                            onClick={() => handleEdit(entry)} 
-                            className="btn btn-sm btn-outline-primary w-24"
-                        >
-                            <i className="bi bi-pencil me-1"></i>Edit
+                    <div>
+                        <button onClick={() => handleEdit(entry)} className="btn btn-sm btn-outline-primary me-2">
+                            <i className="bi bi-pencil"></i> Edit
                         </button>
-                        <button 
-                            onClick={() => handleDelete(entry.id)} 
-                            className="btn btn-sm btn-outline-danger w-24"
-                        >
-                            <i className="bi bi-trash me-1"></i>Delete
+                        <button onClick={() => handleDelete(entry.id)} className="btn btn-sm btn-outline-danger">
+                            <i className="bi bi-trash"></i> Delete
                         </button>
                     </div>
                 </li>
