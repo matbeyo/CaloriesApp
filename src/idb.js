@@ -1,6 +1,7 @@
+const DB_NAME = "caloriesdb";
+const DB_VERSION = 1;
 
 const idb = {
-
     createDummyData: () => {
         const today = new Date();
         const yesterday = new Date(today);
@@ -73,93 +74,98 @@ const idb = {
         ];
     },
 
-    /**
-     * Opens or creates a database for calorie management
-     * @param {string} dbName - The name of the database
-     * @param {number} version - The version of the database
-     * @returns {Promise<IDBDatabase>} - A promise that resolves to the database object
-     */
-    openCaloriesDB: async (dbName, version) => {
+    openCaloriesDB: async () => {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(dbName, version);
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-            // Handle errors in opening the database
-            request.onerror = (event) => reject(new Error("Error opening database"));
-            
-            // Create object stores and indexes when the database is upgraded
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                // Create "calories" object store with auto-incrementing primary key "id"
-                const objectStore = db.createObjectStore("calories", { keyPath: "id", autoIncrement: true });
-                objectStore.createIndex("category", "category", { unique: false });
-                objectStore.createIndex("date", "date", { unique: false });
+            request.onerror = () => {
+                reject(new Error("Error opening database"));
             };
 
-            // Initialize with dummy data upon success
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains("calories")) {
+                    const objectStore = db.createObjectStore("calories", { keyPath: "id", autoIncrement: true });
+                    objectStore.createIndex("category", "category", { unique: false });
+                    objectStore.createIndex("date", "date", { unique: false });
+                }
+            };
+
             request.onsuccess = async (event) => {
                 const db = event.target.result;
-                
-                // Check if there's any existing data
-                const transaction = db.transaction(["calories"], "readonly");
-                const objectStore = transaction.objectStore("calories");
-                const countRequest = objectStore.count();
-                
-                countRequest.onsuccess = async () => {
-                    if (countRequest.result === 0) {
-                        // No existing data, add dummy data
-                        const dummyData = idb.createDummyData();
-                        const writeTransaction = db.transaction(["calories"], "readwrite");
-                        const writeStore = writeTransaction.objectStore("calories");
-                        
-                        for (const entry of dummyData) {
-                            writeStore.add(entry);
-                        }
-                        
-                        writeTransaction.oncomplete = () => {
+                try {
+                    // Check if there's any existing data
+                    const transaction = db.transaction(["calories"], "readonly");
+                    const objectStore = transaction.objectStore("calories");
+                    const countRequest = objectStore.count();
+
+                    countRequest.onsuccess = async () => {
+                        if (countRequest.result === 0) {
+                            // No existing data, add dummy data
+                            const dummyData = idb.createDummyData();
+                            const writeTransaction = db.transaction(["calories"], "readwrite");
+                            const writeStore = writeTransaction.objectStore("calories");
+
+                            for (const entry of dummyData) {
+                                writeStore.add(entry);
+                            }
+
+                            writeTransaction.oncomplete = () => {
+                                resolve(db);
+                            };
+
+                            writeTransaction.onerror = () => {
+                                reject(new Error("Error adding dummy data"));
+                            };
+                        } else {
                             resolve(db);
-                        };
-                    } else {
-                        resolve(db);
-                    }
-                };
+                        }
+                    };
+
+                    countRequest.onerror = () => {
+                        reject(new Error("Error checking existing data"));
+                    };
+                } catch (error) {
+                    reject(error);
+                }
             };
         });
     },
 
-    // ... rest of the existing idb methods remain unchanged ...
-    addCalories: async (db, calorieData) => {
+    addCalories: (db, calorieData) => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(["calories"], "readwrite");
             const objectStore = transaction.objectStore("calories");
             const request = objectStore.add(calorieData);
 
-            request.onerror = (event) => reject(new Error("Error adding calorie entry"));
+            request.onerror = () => reject(new Error("Error adding calorie entry"));
             request.onsuccess = (event) => resolve(event.target.result);
         });
     },
 
-    updateCalories: async (db, calorieData) => {
+    updateCalories: (db, calorieData) => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(["calories"], "readwrite");
             const objectStore = transaction.objectStore("calories");
             const request = objectStore.put(calorieData);
-            request.onerror = (event) => reject(new Error("Error updating calorie entry"));
-            request.onsuccess = (event) => resolve();
+
+            request.onerror = () => reject(new Error("Error updating calorie entry"));
+            request.onsuccess = () => resolve();
         });
     },
 
-    deleteCalories: async (db, id) => {
+    deleteCalories: (db, id) => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(["calories"], "readwrite");
             const objectStore = transaction.objectStore("calories");
             const request = objectStore.delete(id);
-            
-            request.onerror = (event) => reject(new Error("Error deleting calorie entry"));
-            request.onsuccess = (event) => resolve();
+
+            request.onerror = () => reject(new Error("Error deleting calorie entry"));
+            request.onsuccess = () => resolve();
         });
     },
 
-    getCaloriesByMonth: async (db, year, month) => {
+    getCaloriesByMonth: (db, year, month) => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(["calories"], "readonly");
             const objectStore = transaction.objectStore("calories");
@@ -167,12 +173,11 @@ const idb = {
 
             const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
             const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`;
-
             const range = IDBKeyRange.bound(startDate, endDate);
 
             const request = index.getAll(range);
 
-            request.onerror = (event) => reject(new Error("Error getting calorie entries"));
+            request.onerror = () => reject(new Error("Error getting calorie entries"));
             request.onsuccess = (event) => resolve(event.target.result);
         });
     },
