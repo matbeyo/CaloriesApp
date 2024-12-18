@@ -15,55 +15,7 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [editingEntry, setEditingEntry] = useState(null);
     
-    useEffect(() => {
-        const initDb = async () => {
-            try {
-                setIsLoading(true);
-                const database = await idb.openCaloriesDB();
-                setDb(database);
-            } catch (err) {
-                console.error('Database initialization error:', err);
-                setError("Failed to initialize database. Please refresh the page.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        initDb();
-    }, []);
-
-    useEffect(() => {
-        const fetchCalories = async () => {
-            if (!db) return;
-            
-            try {
-                const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
-                setCalories(fetchedCalories);
-                setError(null);
-            } catch (err) {
-                console.error('Fetch error:', err);
-                setError("Failed to fetch calorie entries. Please try again.");
-            }
-        };
-
-        fetchCalories();
-    }, [db, selectedMonth, selectedYear]);
-
-    const handleMonthChange = (e) => {
-        const [year, month] = e.target.value.split('-');
-        setSelectedYear(parseInt(year));
-        setSelectedMonth(parseInt(month) - 1);
-    };
-
-    const refreshCalories = async () => {
-        if (!db) return;
-        try {
-            const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
-            setCalories(fetchedCalories);
-            setError(null);
-        } catch (err) {
-            setError("Failed to fetch calorie entries. Please try again.");
-        }
-    };
+    // ... (keep all the existing state and effects) ...
 
     if (isLoading) {
         return <div className="container mt-5 text-center">Loading...</div>;
@@ -81,7 +33,7 @@ const App = () => {
             )}
 
             <div className="row">
-                <div className="col-lg-6 mb-4">
+                <div className="col-md-4 mb-4">
                     <CalorieForm 
                         db={db} 
                         fetchCalories={refreshCalories}
@@ -90,7 +42,7 @@ const App = () => {
                         setEditingEntry={setEditingEntry}
                     />
                 </div>
-                <div className="col-lg-6 mb-4">
+                <div className="col-md-8 mb-4">
                     <div className="card shadow-sm">
                         <div className="card-header text-white bg-primary">
                             <h5 className="card-title mb-0">Calorie Report</h5>
