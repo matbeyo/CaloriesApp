@@ -37,6 +37,7 @@ const App = () => {
             if (!db) return;
             
             try {
+                // Call getCaloriesByMonth through the idb object, not directly on db
                 const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
                 setCalories(fetchedCalories);
                 setError(null);
@@ -53,6 +54,18 @@ const App = () => {
         const [year, month] = e.target.value.split('-');
         setSelectedYear(parseInt(year));
         setSelectedMonth(parseInt(month) - 1);
+    };
+
+    // Function to refresh calories data
+    const refreshCalories = async () => {
+        if (!db) return;
+        try {
+            const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
+            setCalories(fetchedCalories);
+            setError(null);
+        } catch (err) {
+            setError("Failed to fetch calorie entries. Please try again.");
+        }
     };
 
     if (isLoading) {
@@ -74,20 +87,7 @@ const App = () => {
                 <div className="col-lg-6 mb-4">
                     <CalorieForm 
                         db={db} 
-                        fetchCalories={() => {
-                            // Trigger a re-fetch by forcing the useEffect to run
-                            const fetchCalories = async () => {
-                                if (!db) return;
-                                try {
-                                    const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
-                                    setCalories(fetchedCalories);
-                                    setError(null);
-                                } catch (err) {
-                                    setError("Failed to fetch calorie entries. Please try again.");
-                                }
-                            };
-                            fetchCalories();
-                        }} 
+                        fetchCalories={refreshCalories}
                         setError={setError} 
                     />
                 </div>
@@ -106,20 +106,7 @@ const App = () => {
                             <CalorieList 
                                 calories={calories} 
                                 db={db} 
-                                fetchCalories={() => {
-                                    // Trigger a re-fetch by forcing the useEffect to run
-                                    const fetchCalories = async () => {
-                                        if (!db) return;
-                                        try {
-                                            const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
-                                            setCalories(fetchedCalories);
-                                            setError(null);
-                                        } catch (err) {
-                                            setError("Failed to fetch calorie entries. Please try again.");
-                                        }
-                                    };
-                                    fetchCalories();
-                                }} 
+                                fetchCalories={refreshCalories}
                                 setError={setError} 
                             />
                         </div>
