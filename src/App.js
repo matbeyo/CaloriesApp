@@ -15,7 +15,46 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [editingEntry, setEditingEntry] = useState(null);
     
-    // ... (keep all the existing state and effects) ...
+    // Initialize the database
+    useEffect(() => {
+        const initDb = async () => {
+            try {
+                setIsLoading(true);
+                const database = await idb.openCaloriesDB();
+                setDb(database);
+            } catch (err) {
+                console.error('Database initialization error:', err);
+                setError("Failed to initialize database. Please refresh the page.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        initDb();
+    }, []);
+
+    // Function to refresh calories data
+    const refreshCalories = async () => {
+        if (!db) return;
+        try {
+            const fetchedCalories = await idb.getCaloriesByMonth(db, selectedYear, selectedMonth);
+            setCalories(fetchedCalories);
+            setError(null);
+        } catch (err) {
+            setError("Failed to fetch calorie entries. Please try again.");
+        }
+    };
+
+    // Handle month change
+    const handleMonthChange = (e) => {
+        const [year, month] = e.target.value.split('-');
+        setSelectedYear(parseInt(year));
+        setSelectedMonth(parseInt(month) - 1);
+    };
+
+    // Fetch calories when db, month, or year changes
+    useEffect(() => {
+        refreshCalories();
+    }, [db, selectedMonth, selectedYear]);
 
     if (isLoading) {
         return <div className="container mt-5 text-center">Loading...</div>;
