@@ -24,10 +24,18 @@ const CalorieList = ({ calories, db, fetchCalories, setError }) => {
                         <strong>{entry.calories} calories</strong> - {entry.description} ({entry.date})
                     </div>
                     <div className="btn-group">
-                        <button onClick={() => handleEdit(entry)} className="btn btn-sm btn-outline-primary">
+                        <button 
+                            onClick={() => handleEdit(entry)} 
+                            className="btn btn-sm btn-outline-primary"
+                            style={{ width: '80px' }}
+                        >
                             <i className="bi bi-pencil"></i> Edit
                         </button>
-                        <button onClick={() => handleDelete(entry.id)} className="btn btn-sm btn-outline-danger">
+                        <button 
+                            onClick={() => handleDelete(entry.id)} 
+                            className="btn btn-sm btn-outline-danger"
+                            style={{ width: '80px' }}
+                        >
                             <i className="bi bi-trash"></i> Delete
                         </button>
                     </div>
