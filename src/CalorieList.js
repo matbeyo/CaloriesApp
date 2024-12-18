@@ -23,20 +23,18 @@ const CalorieList = ({ calories, db, fetchCalories, setError }) => {
                         <span className="badge bg-primary me-2">{entry.category}</span>
                         <strong>{entry.calories} calories</strong> - {entry.description} ({entry.date})
                     </div>
-                    <div className="btn-group">
+                    <div className="d-flex gap-2">
                         <button 
                             onClick={() => handleEdit(entry)} 
-                            className="btn btn-sm btn-outline-primary"
-                            style={{ width: '80px' }}
+                            className="btn btn-sm btn-outline-primary w-24"
                         >
-                            <i className="bi bi-pencil"></i> Edit
+                            <i className="bi bi-pencil me-1"></i>Edit
                         </button>
                         <button 
                             onClick={() => handleDelete(entry.id)} 
-                            className="btn btn-sm btn-outline-danger"
-                            style={{ width: '80px' }}
+                            className="btn btn-sm btn-outline-danger w-24"
                         >
-                            <i className="bi bi-trash"></i> Delete
+                            <i className="bi bi-trash me-1"></i>Delete
                         </button>
                     </div>
                 </li>
